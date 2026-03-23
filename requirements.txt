@@ -4,6 +4,5 @@ numpy
 plotly
 requests
 yfinance
-statsmodels
 scikit-learn
-matplolib
+matplotlib
