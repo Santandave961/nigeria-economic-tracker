@@ -143,19 +143,33 @@ def fetch_ngx():
     
 def forecast_sarima(series, steps=6):
     try:
-        from statsmodels.tsa.statespace.sarimax import SARIMAX
-        model = SARIMAX(series, order=(1, 1, 1),
-                        seasonal_order=(1, 1, 0, 12),
-                        enforce_stationarity=False,
-                        enforce_invertibility=False)
-        result = model.fit(disp=False)
-        forecast = result.get_forecast(steps=steps)
-        mean = forecast.predicted_mean
-        ci = forecast.conf_int()
+        from sklearn.linear_model import LinearRegression
+        import numpy as np
+        df = series.reset_index()
+        df.columns = ["Year", "Value"]
+        df = dropna()
+        X = df["Year"].values.reshape(-1, 1)
+        y = df["Value"].values
+        model = LinearRegression()
+        model.fit(X, Y)
+        last_year = int(df["Year"].iloc[-1])
+        future_years = np.array(
+            [last_year + i + 1 for i in range(steps)]
+        ).reshape(-1, 1)
+        predictions = model.predict(future_years)
+        mean = pd.Series(
+            predictions,
+            index=range(steps)
+        )
+        margin = y.std() * 1.5
+        ci = pd.DataFrame({
+            "lower": predictions - margin,
+            "upper": predictions + margin
+        })
         return mean, ci
     except Exception:
         return None, None
-
+        
 def metric_card(col, label, df, unit="", invert=False):
     with col:
         if df is not None and not df.empty and "Value" in df.columns:
