@@ -145,23 +145,16 @@ def forecast_sarima(series, steps=6):
     try:
         from sklearn.linear_model import LinearRegression
         import numpy as np
-        df = series.reset_index()
-        df.columns = ["Year", "Value"]
-        df = dropna()
-        X = df["Year"].values.reshape(-1, 1)
-        y = df["Value"].values
+        values = series.values
+        years = np.arange(len(values)).reshape(-1, 1)
         model = LinearRegression()
-        model.fit(X, Y)
-        last_year = int(df["Year"].iloc[-1])
-        future_years = np.array(
-            [last_year + i + 1 for i in range(steps)]
+        model.fit(years, values)
+        future = np.arange(
+            len(values), len(values) + steps
         ).reshape(-1, 1)
-        predictions = model.predict(future_years)
-        mean = pd.Series(
-            predictions,
-            index=range(steps)
-        )
-        margin = y.std() * 1.5
+        predictions = model.predict(future)
+        mean = pd.Series(predictions)
+        margin = float(np.std(values) * 1.5)
         ci = pd.DataFrame({
             "lower": predictions - margin,
             "upper": predictions + margin
@@ -169,6 +162,7 @@ def forecast_sarima(series, steps=6):
         return mean, ci
     except Exception:
         return None, None
+       
         
 def metric_card(col, label, df, unit="", invert=False):
     with col:
@@ -426,7 +420,7 @@ for name, df in dfs.items():
         st.warning("Not enough data for correlation analysis")
     
 if show_forecast and not inflation_df.empty:
-    st.markdown('<p class="section-header"> ML Inflation Forecast (SARIMA)</P>',unsafe_allow_html=True)
+    st.markdown('<p class="section-header"> ML Inflation Forecast (Linear Regression)</p>',unsafe_allow_html=True)
 
     mean, ci= forecast_sarima(
         inflation_df.set_index("Year")["Value"], steps=forecast_months // 12 + 2)
